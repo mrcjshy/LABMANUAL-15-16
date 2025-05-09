@@ -5,6 +5,38 @@ import StudentList from "./components/StudentList";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
+// Configure axios with default settings
+axios.defaults.baseURL = "http://localhost:5000";
+
+// Add request/response interceptors for debugging
+axios.interceptors.request.use(request => {
+    console.log('API Request:', {
+        url: request.url,
+        method: request.method,
+        data: request.data
+    });
+    return request;
+});
+
+axios.interceptors.response.use(
+    response => {
+        console.log('API Response:', {
+            url: response.config.url,
+            status: response.status,
+            data: response.data
+        });
+        return response;
+    },
+    error => {
+        console.error('API Error:', {
+            url: error.config?.url,
+            status: error.response?.status,
+            data: error.response?.data
+        });
+        return Promise.reject(error);
+    }
+);
+
 const App = () => {
     // Add the bootstrap icons CDN to the document head
     useEffect(() => {
@@ -33,7 +65,7 @@ const App = () => {
     const fetchStudents = async () => {
         try {
             setLoading(true);
-            const response = await axios.get("http://localhost:5000/api/students");
+            const response = await axios.get("/api/students");
             setStudents(response.data);
             setError(null);
         } catch (error) {
@@ -48,7 +80,7 @@ const App = () => {
         // Check if the table exists and create it if needed
         const setupDatabase = async () => {
             try {
-                await axios.get("http://localhost:5000/api/students/check-table");
+                await axios.get("/api/students/check-table");
                 fetchStudents();
             } catch (error) {
                 console.error("Database setup error:", error);

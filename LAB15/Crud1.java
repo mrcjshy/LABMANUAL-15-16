@@ -1,8 +1,55 @@
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.io.File;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class Crud1 {
+
+    // Static block to load MySQL driver when the class is loaded
+    static {
+        try {
+            System.out.println("Loading MySQL JDBC driver...");
+
+            // Check if MySQL connector JAR exists
+            File jarFile = new File("lib/mysql-connector-j-9.3.0.jar");
+            if (jarFile.exists()) {
+                System.out.println("MySQL connector JAR found at: " + jarFile.getAbsolutePath());
+            } else {
+                System.err.println("WARNING: MySQL connector JAR not found at: " + jarFile.getAbsolutePath());
+            }
+
+            // Try loading the driver with both current and legacy class names
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                System.out.println("MySQL JDBC driver loaded successfully (com.mysql.cj.jdbc.Driver)!");
+            } catch (ClassNotFoundException e1) {
+                try {
+                    Class.forName("com.mysql.jdbc.Driver");
+                    System.out.println("MySQL JDBC driver loaded successfully (com.mysql.jdbc.Driver)!");
+                } catch (ClassNotFoundException e2) {
+                    System.err.println("ERROR: MySQL JDBC driver not found!");
+                    e2.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR loading driver:");
+            e.printStackTrace();
+        }
+    }
 
     private JTextField nameField;
     private JTextField emailField;
@@ -129,7 +176,22 @@ public class Crud1 {
         JButton addButton = new JButton("Add User");
         addButton.addActionListener(e -> {
             AddUser addUser = new AddUser(dbConnection);
-            addUser.addUser(nameField.getText(), emailField.getText());
+            String name = nameField.getText();
+            String email = emailField.getText();
+
+            if (name.isEmpty() || email.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Name and email cannot be empty!", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            boolean success = addUser.addUser(name, email);
+            if (success) {
+                JOptionPane.showMessageDialog(frame, "User added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                nameField.setText("");
+                emailField.setText("");
+            } else {
+                JOptionPane.showMessageDialog(frame, "Failed to add user. Please check the console for details.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
         transactionConstraints.gridx = 0;
         transactionConstraints.gridy = 0;
@@ -169,11 +231,18 @@ public class Crud1 {
                     int id = Integer.parseInt(idString);
                     String newName = JOptionPane.showInputDialog(null, "Enter new name:");
                     String newEmail = JOptionPane.showInputDialog(null, "Enter new email:");
-                    if (newName != null && newEmail != null) {
-                        editUser.editUser(id, newName, newEmail);
+                    if (newName != null && !newName.isEmpty() && newEmail != null && !newEmail.isEmpty()) {
+                        boolean success = editUser.editUser(id, newName, newEmail);
+                        if (success) {
+                            JOptionPane.showMessageDialog(frame, "User updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(frame, "Failed to update user. User ID may not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "Name and email cannot be empty!", "Input Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } catch (NumberFormatException ex) {
-                    System.out.println("Invalid ID. Please enter a valid number.");
+                    JOptionPane.showMessageDialog(frame, "Invalid ID. Please enter a valid number.", "Input Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -187,9 +256,24 @@ public class Crud1 {
             if (idString != null && !idString.isEmpty()) {
                 try {
                     int id = Integer.parseInt(idString);
-                    deleteUser.deleteUser(id);
+
+                    int confirm = JOptionPane.showConfirmDialog(
+                            frame,
+                            "Are you sure you want to delete user with ID " + id + "?",
+                            "Confirm Deletion",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.WARNING_MESSAGE);
+
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        boolean success = deleteUser.deleteUser(id);
+                        if (success) {
+                            JOptionPane.showMessageDialog(frame, "User deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(frame, "Failed to delete user. User ID may not exist.", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
                 } catch (NumberFormatException ex) {
-                    System.out.println("Invalid ID. Please enter a valid number.");
+                    JOptionPane.showMessageDialog(frame, "Invalid ID. Please enter a valid number.", "Input Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });

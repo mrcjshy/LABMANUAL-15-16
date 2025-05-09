@@ -3,7 +3,9 @@ import axios from "axios";
 
 const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
     const [name, setName] = useState("");
-    const [course, setCourse] = useState("");
+    const [math, setMath] = useState("");
+    const [science, setScience] = useState("");
+    const [english, setEnglish] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -12,7 +14,9 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
     useEffect(() => {
         if (editStudent) {
             setName(editStudent.name);
-            setCourse(editStudent.course);
+            setMath(editStudent.math);
+            setScience(editStudent.science);
+            setEnglish(editStudent.english);
         }
     }, [editStudent]);
 
@@ -22,20 +26,56 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
         setLoading(true);
         setIsSuccess(false);
         
-        if (!name || !course) {
-            setError("Both fields are required.");
+        if (!name || math === "" || science === "" || english === "") {
+            setError("All fields are required.");
+            setLoading(false);
+            return;
+        }
+
+        // Convert string values to numbers for validation and submission
+        const mathScore = Number(math);
+        const scienceScore = Number(science);
+        const englishScore = Number(english);
+
+        // Validate score ranges (0-100)
+        if (isNaN(mathScore) || isNaN(scienceScore) || isNaN(englishScore)) {
+            setError("All scores must be valid numbers.");
             setLoading(false);
             return;
         }
         
+        if (mathScore < 0 || mathScore > 100 || scienceScore < 0 || scienceScore > 100 || englishScore < 0 || englishScore > 100) {
+            setError("Scores must be between 0 and 100.");
+            setLoading(false);
+            return;
+        }
+        
+        // Prepare data for submission
+        const studentData = {
+            name,
+            math: mathScore,
+            science: scienceScore,
+            english: englishScore
+        };
+        
+        console.log("Submitting data:", studentData);
+        
         try {
             if (editStudent) {
                 // Update existing student
-                await axios.put(`http://localhost:5000/api/students/${editStudent.id}`, { name, course });
+                const response = await axios.put(
+                    `/api/students/${editStudent.id}`, 
+                    studentData
+                );
+                console.log("Update response:", response.data);
                 setEditStudent(null);
             } else {
                 // Add new student
-                await axios.post("http://localhost:5000/api/students", { name, course });
+                const response = await axios.post(
+                    "/api/students", 
+                    studentData
+                );
+                console.log("Add response:", response.data);
             }
             
             fetchStudents();
@@ -48,7 +88,13 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
             }, 3000);
         } catch (err) {
             console.error("Error details:", err);
-            setError(`Failed to ${editStudent ? 'update' : 'add'} student: ${err.message}`);
+            if (err.response) {
+                console.error("Response data:", err.response.data);
+                console.error("Response status:", err.response.status);
+                setError(`Failed to ${editStudent ? 'update' : 'add'} student: ${err.response.data.error || err.message}`);
+            } else {
+                setError(`Failed to ${editStudent ? 'update' : 'add'} student: ${err.message}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -56,7 +102,9 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
 
     const resetForm = () => {
         setName("");
-        setCourse("");
+        setMath("");
+        setScience("");
+        setEnglish("");
         setError("");
         if (setEditStudent) setEditStudent(null);
     };
@@ -104,7 +152,7 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
                 )}
                 
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
+                    <div className="mb-3">
                         <label htmlFor="name" className="form-label">
                             <i className="bi bi-person me-2"></i>
                             Student Name
@@ -119,18 +167,54 @@ const StudentForm = ({ fetchStudents, editStudent, setEditStudent }) => {
                         />
                     </div>
                     
-                    <div className="mb-4">
-                        <label htmlFor="course" className="form-label">
-                            <i className="bi bi-book me-2"></i>
-                            Course
+                    <div className="mb-3">
+                        <label htmlFor="math" className="form-label">
+                            <i className="bi bi-calculator me-2"></i>
+                            Math Score
                         </label>
                         <input 
-                            type="text" 
+                            type="number" 
                             className="form-control"
-                            id="course" 
-                            placeholder="Enter course name" 
-                            value={course} 
-                            onChange={(e) => setCourse(e.target.value)} 
+                            id="math" 
+                            placeholder="Enter math score (0-100)" 
+                            value={math} 
+                            onChange={(e) => setMath(e.target.value)}
+                            min="0"
+                            max="100" 
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label htmlFor="science" className="form-label">
+                            <i className="bi bi-flask me-2"></i>
+                            Science Score
+                        </label>
+                        <input 
+                            type="number" 
+                            className="form-control"
+                            id="science" 
+                            placeholder="Enter science score (0-100)" 
+                            value={science} 
+                            onChange={(e) => setScience(e.target.value)}
+                            min="0"
+                            max="100" 
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label htmlFor="english" className="form-label">
+                            <i className="bi bi-book me-2"></i>
+                            English Score
+                        </label>
+                        <input 
+                            type="number" 
+                            className="form-control"
+                            id="english" 
+                            placeholder="Enter english score (0-100)" 
+                            value={english} 
+                            onChange={(e) => setEnglish(e.target.value)}
+                            min="0"
+                            max="100" 
                         />
                     </div>
                     

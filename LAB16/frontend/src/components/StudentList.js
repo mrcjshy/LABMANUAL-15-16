@@ -48,7 +48,7 @@ const StudentList = ({ students, fetchStudents, setEditStudent }) => {
         try {
             setLoading(true);
             setDeleteId(studentToDelete.id);
-            await axios.delete(`http://localhost:5000/api/students/${studentToDelete.id}`);
+            await axios.delete(`/api/students/${studentToDelete.id}`);
             fetchStudents();
             setShowConfirmModal(false);
             setStudentToDelete(null);
@@ -64,6 +64,16 @@ const StudentList = ({ students, fetchStudents, setEditStudent }) => {
     const cancelDelete = () => {
         setShowConfirmModal(false);
         setStudentToDelete(null);
+    };
+
+    // Get grade color based on letter grade
+    const getGradeColor = (grade) => {
+        switch (grade) {
+            case 'A': return 'success';
+            case 'B': return 'primary';
+            case 'C': return 'warning';
+            default: return 'danger';
+        }
     };
 
     if (students.length === 0) {
@@ -172,6 +182,7 @@ const StudentList = ({ students, fetchStudents, setEditStudent }) => {
                 <div className="card-header d-flex align-items-center justify-content-between">
                     <h3 className="card-title m-0">
                         <span className="d-flex align-items-center">
+                            <i className="bi bi-table me-2"></i>
                             Student Records
                         </span>
                     </h3>
@@ -183,51 +194,47 @@ const StudentList = ({ students, fetchStudents, setEditStudent }) => {
                         <thead>
                             <tr>
                                 <th scope="col" width="5%">#</th>
-                                <th scope="col" width="40%">NAME</th>
-                                <th scope="col" width="35%">COURSE</th>
-                                <th scope="col" width="20%" className="text-end">Actions</th>
+                                <th scope="col" width="15%">Name</th>
+                                <th scope="col" width="10%">Math</th>
+                                <th scope="col" width="10%">Science</th>
+                                <th scope="col" width="10%">English</th>
+                                <th scope="col" width="10%">Average</th>
+                                <th scope="col" width="10%">Grade</th>
+                                <th scope="col" width="15%" className="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {students.map((student, index) => (
                                 <tr key={student.id} style={{"--row-index": index}}>
                                     <td>{index + 1}</td>
+                                    <td>{student.name}</td>
+                                    <td>{student.math}</td>
+                                    <td>{student.science}</td>
+                                    <td>{student.english}</td>
+                                    <td>{student.average}</td>
                                     <td>
-                                        <div className="d-flex align-items-center">
-                                            <img 
-                                                src={`${process.env.PUBLIC_URL}/fighting duck.png`} 
-                                                alt="Fighting Duck" 
-                                                className="me-2"
-                                                style={{ height: '30px', width: 'auto' }}
-                                            />
-                                            <span className="fw-medium">{student.name}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span className="badge bg-light text-dark">
-                                            {student.course}
+                                        <span className={`badge bg-${getGradeColor(student.grade)}`}>
+                                            {student.grade}
                                         </span>
                                     </td>
                                     <td className="text-end">
-                                        <div className="btn-group" role="group">
-                                            <button 
-                                                className="btn btn-sm btn-outline-success"
-                                                onClick={() => handleEdit(student)}
-                                            >
-                                                <i className="bi bi-pencil-square"></i>
-                                            </button>
-                                            <button 
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() => prepareDelete(student)}
-                                                disabled={loading && deleteId === student.id}
-                                            >
-                                                {loading && deleteId === student.id ? (
-                                                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                                ) : (
-                                                    <i className="bi bi-trash"></i>
-                                                )}
-                                            </button>
-                                        </div>
+                                        <button 
+                                            className="btn btn-sm btn-outline-secondary me-2" 
+                                            onClick={() => handleEdit(student)}
+                                        >
+                                            <i className="bi bi-pencil"></i>
+                                        </button>
+                                        <button 
+                                            className="btn btn-sm btn-outline-danger" 
+                                            onClick={() => prepareDelete(student)}
+                                            disabled={loading && deleteId === student.id}
+                                        >
+                                            {loading && deleteId === student.id ? (
+                                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            ) : (
+                                                <i className="bi bi-trash"></i>
+                                            )}
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
